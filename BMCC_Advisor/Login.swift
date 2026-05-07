@@ -1,138 +1,246 @@
 import SwiftUI
 
-struct SettingsView: View {
+struct LoginView: View {
     @Binding var activeScreen: ActiveScreen
     @Environment(\.colorScheme) var colorScheme
+    
+    @FocusState private var focusedField: Field?
+    
+    enum Field {
+        case loginUsername
+        case loginPassword
+        case createEmail
+        case createPassword
+        case createConfirm
+    }
 
-    // Add your real settings here
-    @AppStorage("serverURL") private var serverURL = "Computer Science"
+    enum Screen { case login, create }
+    @State private var screen: Screen = .login
+    @State private var loginUsername = ""
+    @State private var loginPassword = ""
+    @State private var createEmail = ""
+    @State private var createPassword = ""
+    @State private var createConfirm = ""
+    @State private var errorMessage = ""
+
+    // Replace with real auth later
+    let mockUsers: [String: String] = ["admin": "1234"]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-
-            // Header
-            HStack {
-                Button {
-                    withAnimation { activeScreen = .chat }
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "chevron.left")
-                        Text("Back")
-                    }
-                    .foregroundColor(.blue)
-                }
-                Spacer()
-            }
-            .padding(.horizontal)
-            .padding(.vertical, 12)
-            .background(barColor)
-            .overlay(Divider(), alignment: .bottom)
-
+        ScrollViewReader { scrollProxy in
             ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-
-                    Text("Settings")
-                        .font(.largeTitle.bold())
-                        .padding(.top, 8)
-
-                    // Server section
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("SERVER")
-                            .font(.caption.bold())
+                VStack(spacing: 0) {
+                    // Title
+                    VStack(spacing: 4) {
+                        Text("BMCC Advisor")
+                            .font(.largeTitle.bold())
+                        Text("Your AI Academic Assistant")
+                            .font(.subheadline)
                             .foregroundColor(.secondary)
-
-                        VStack(spacing: 0) {
-                            HStack {
-                                Text("Major selected")
-                                Spacer()
-                                TextField("Computer Science", text: $serverURL)
-                                    .multilineTextAlignment(.trailing)
-                                    .foregroundColor(.secondary)
-                                    .font(.subheadline)
-                            }
-                            .padding()
-
-                            Divider().padding(.leading)
-
-                           
-                        }
-                        .background(sectionBackground)
-                        .cornerRadius(12)
                     }
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 60)
+                    .padding(.bottom, 32)
 
-                    // About section
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("ABOUT")
-                            .font(.caption.bold())
-                            .foregroundColor(.secondary)
-
-                        VStack(spacing: 0) {
-                            HStack {
-                                Text("Name")
-                                Spacer()
-                                Text("Youness E.")
-                                    .foregroundColor(.secondary)
-                            }
-                            .padding()
-
-                            Divider().padding(.leading)
-
-                            HStack {
-                                Text("Excpected Graduation")
-                                Spacer()
-                                Text("2027")
-                                    .foregroundColor(.secondary)
-                            }
-                            .padding()
-
-                            Divider().padding(.leading)
-                            
-                            HStack {
-                                Text("Schedule type")
-                                Spacer()
-                                Text("Full-time")
-                                    .foregroundColor(.secondary)
-                            }
-                            .padding()
-
-                            Divider().padding(.leading)
-                            HStack {
-                                Text("Version")
-                                Spacer()
-                                Text("1.0.0")
-                                    .foregroundColor(.secondary)
-                            }
-                            .padding()
+                    // Tab switcher
+                    HStack(spacing: 0) {
+                        Button {
+                            screen = .login
+                            errorMessage = ""
+                        } label: {
+                            Text("Login")
+                                .font(.subheadline.bold())
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .background(screen == .login ? Color.blue : Color.clear)
+                                .foregroundColor(screen == .login ? .white : .secondary)
                         }
-                        .background(sectionBackground)
-                        .cornerRadius(12)
-                    }
 
-                    Spacer()
+                        Button {
+                            screen = .create
+                            errorMessage = ""
+                        } label: {
+                            Text("Create Account")
+                                .font(.subheadline.bold())
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .background(screen == .create ? Color.blue : Color.clear)
+                                .foregroundColor(screen == .create ? .white : .secondary)
+                        }
+                    }
+                    .background(Color(.systemBackground))
+                    .cornerRadius(10)
+                    .padding(.horizontal)
+                    .padding(.bottom, 24)
+
+                    // Forms
+                    VStack(spacing: 12) {
+                        if screen == .login {
+                            TextField("Username", text: $loginUsername)
+                                .padding()
+                                .background(Color(.systemBackground))
+                                .cornerRadius(10)
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                                .focused($focusedField, equals: .loginUsername)
+                                .submitLabel(.next)
+                                .onSubmit {
+                                    focusedField = .loginPassword
+                                }
+
+                            SecureField("Password", text: $loginPassword)
+                                .padding()
+                                .background(Color(.systemBackground))
+                                .cornerRadius(10)
+                                .focused($focusedField, equals: .loginPassword)
+                                .submitLabel(.done)
+                                .onSubmit {
+                                    performLogin()
+                                }
+
+                            if !errorMessage.isEmpty {
+                                Text(errorMessage)
+                                    .foregroundColor(.red)
+                                    .font(.caption)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+
+                            Button {
+                                performLogin()
+                            } label: {
+                                Text("Login")
+                                    .bold()
+                                    .frame(maxWidth: .infinity)
+                                    .padding()
+                                    .background(Color.blue)
+                                    .foregroundColor(.white)
+                                    .cornerRadius(10)
+                            }
+                            .id("loginButton")
+
+                        } else {
+                            TextField("Email", text: $createEmail)
+                                .padding()
+                                .background(Color(.systemBackground))
+                                .cornerRadius(10)
+                                .textInputAutocapitalization(.never)
+                                .keyboardType(.emailAddress)
+                                .autocorrectionDisabled()
+                                .focused($focusedField, equals: .createEmail)
+                                .submitLabel(.next)
+                                .onSubmit {
+                                    focusedField = .createPassword
+                                }
+
+                            SecureField("Password", text: $createPassword)
+                                .padding()
+                                .background(Color(.systemBackground))
+                                .cornerRadius(10)
+                                .focused($focusedField, equals: .createPassword)
+                                .submitLabel(.next)
+                                .onSubmit {
+                                    focusedField = .createConfirm
+                                }
+
+                            SecureField("Confirm Password", text: $createConfirm)
+                                .padding()
+                                .background(Color(.systemBackground))
+                                .cornerRadius(10)
+                                .focused($focusedField, equals: .createConfirm)
+                                .submitLabel(.done)
+                                .onSubmit {
+                                    performCreateAccount()
+                                }
+
+                            if !errorMessage.isEmpty {
+                                Text(errorMessage)
+                                    .foregroundColor(.red)
+                                    .font(.caption)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+
+                            Button {
+                                performCreateAccount()
+                            } label: {
+                                Text("Create Account")
+                                    .bold()
+                                    .frame(maxWidth: .infinity)
+                                    .padding()
+                                    .background(Color.blue)
+                                    .foregroundColor(.white)
+                                    .cornerRadius(10)
+                            }
+                            .id("createButton")
+                        }
+                    }
+                    .padding(.horizontal)
+
+                    // Spacer to push content up when keyboard appears
+                    Color.clear
+                        .frame(height: 100)
+                        .id("bottomSpacer")
+                }
+            }
+            .scrollDismissesKeyboard(.interactively)
+            .onChange(of: focusedField) { _, newValue in
+                if newValue != nil {
+                    withAnimation {
+                        scrollProxy.scrollTo("bottomSpacer", anchor: .bottom)
+                    }
+                }
+            }
+            .background(Color(.systemGroupedBackground).ignoresSafeArea())
+            .onTapGesture {
+                focusedField = nil
+            }
+            
+            // Footer - Outside ScrollView to keep it at bottom
+            VStack(spacing: 12) {
+                Button {
+                    activeScreen = .chat
+                } label: {
+                    Text("Continue as Guest")
+                        .bold()
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color(.systemGray5))
+                        .foregroundColor(.primary)
+                        .cornerRadius(10)
                 }
                 .padding(.horizontal)
+
+                Text("By continuing, you agree to our Terms of Service and Privacy Policy")
+                    .multilineTextAlignment(.center)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal)
+                    .padding(.bottom, 24)
             }
+            .background(Color(.systemGroupedBackground))
         }
-        .background(appBackground.ignoresSafeArea())
     }
-
-    private var appBackground: Color {
-        colorScheme == .dark ? Color.black : Color(.systemGroupedBackground)
+    
+    private func performLogin() {
+        let u = loginUsername.trimmingCharacters(in: .whitespaces).lowercased()
+        let p = loginPassword.trimmingCharacters(in: .whitespaces)
+        if mockUsers[u] == p {
+            activeScreen = .onboard
+        } else {
+            errorMessage = "Invalid username or password."
+        }
     }
-
-    private var barColor: Color {
-        colorScheme == .dark
-            ? Color(red: 0.1, green: 0.1, blue: 0.15)
-            : Color(red: 0.97, green: 0.98, blue: 1.0)
-    }
-
-    private var sectionBackground: Color {
-        colorScheme == .dark
-            ? Color(red: 0.15, green: 0.15, blue: 0.2)
-            : Color(.systemBackground)
+    
+    private func performCreateAccount() {
+        if createEmail.isEmpty || createPassword.isEmpty {
+            errorMessage = "All fields are required."
+        } else if createPassword != createConfirm {
+            errorMessage = "Passwords do not match."
+        } else {
+            activeScreen = .chat
+        }
     }
 }
 
 #Preview {
-    SettingsView(activeScreen: .constant(.settings))
+    LoginView(activeScreen: .constant(.login))
 }

@@ -4,30 +4,24 @@ import Combine
 // MARK: - LLM Manager
 
 class LLMManager: NSObject, ObservableObject {
-
     var onComplete: ((String) -> Void)?
 
     func send(prompt: String) {
-        guard let url = URL(string: "URL") else { return }
+        guard let url = URL(string: "https://mipilar.com/chat") else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try? JSONSerialization.data(withJSONObject: ["user_input": prompt])
-
-        URLSession.shared.dataTask(with: request) { data, _, error in
-            guard let data = data,
-                  let raw = String(data: data, encoding: .utf8) else {
+        URLSession.shared.dataTask(with: request) { data, _, _ in
+            guard let data = data, let raw = String(data: data, encoding: .utf8) else {
                 DispatchQueue.main.async { self.onComplete?("Error: no response") }
                 return
             }
-            let cleaned = Self.stripThinkTags(from: raw)
-            DispatchQueue.main.async { self.onComplete?(cleaned) }
+            DispatchQueue.main.async { self.onComplete?(Self.stripThink(from: raw)) }
         }.resume()
     }
-    
- 
-    // Strip <think>...</think> block and trim whitespace
-    static func stripThinkTags(from text: String) -> String {
+
+    static func stripThink(from text: String) -> String {
         var result = text
         while let start = result.range(of: "<think>"),
               let end = result.range(of: "</think>", range: start.upperBound..<result.endIndex) {
@@ -50,7 +44,6 @@ class KeyboardPublisher: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.keyboardHeight = $0 }
             .store(in: &cancellables)
-
         NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.keyboardHeight = 0 }
@@ -61,12 +54,12 @@ class KeyboardPublisher: ObservableObject {
 // MARK: - Chat View
 
 struct ChatView: View {
+    @Binding var activeScreen: ActiveScreen
     @State private var messages: [ChatMessage] = []
     @State private var inputText = ""
     @State private var isLoading = false
     @State private var textViewHeight: CGFloat = 40
     @State private var keyboardHeight: CGFloat = 0
-    @State private var activeScreen: ActiveScreen = .chat
     @State private var showSidebar = false
     @FocusState private var isInputFocused: Bool
     @Environment(\.colorScheme) private var colorScheme
@@ -74,13 +67,20 @@ struct ChatView: View {
 
     var body: some View {
         ZStack {
-            switch activeScreen {
-            case .chat:
-                chatScreen
-            case .settings:
-                SettingsView(activeScreen: $activeScreen)
+            // Main chat
+            VStack(spacing: 0) {
+                headerView
+                messagesView
+                inputBarView
             }
+            .background(appBackground.ignoresSafeArea())
+            .onTapGesture { isInputFocused = false }
+            .onReceive(KeyboardPublisher.shared.$keyboardHeight) { h in
+                withAnimation(.easeOut(duration: 0.25)) { keyboardHeight = h }
+            }
+            .ignoresSafeArea(.keyboard, edges: .bottom)
 
+            // Sidebar overlay
             if showSidebar {
                 ChatHistoryView(
                     messages: messages,
@@ -91,23 +91,6 @@ struct ChatView: View {
             }
         }
         .animation(.easeInOut(duration: 0.25), value: showSidebar)
-        .animation(.easeInOut(duration: 0.2), value: activeScreen)
-    }
-
-    // MARK: - Chat Screen
-
-    private var chatScreen: some View {
-        VStack(spacing: 0) {
-            headerView
-            messagesView
-            inputBarView
-        }
-        .background(appBackground.ignoresSafeArea())
-        .onTapGesture { isInputFocused = false }
-        .onReceive(KeyboardPublisher.shared.$keyboardHeight) { height in
-            withAnimation(.easeOut(duration: 0.25)) { keyboardHeight = height }
-        }
-        .ignoresSafeArea(.keyboard, edges: .bottom)
     }
 
     // MARK: - Header
@@ -123,8 +106,7 @@ struct ChatView: View {
             }
 
             Spacer()
- 
-            
+
             Text("BMCC Advisor")
                 .font(.headline.bold())
                 .foregroundStyle(.blue)
@@ -132,7 +114,7 @@ struct ChatView: View {
             Spacer()
 
             Button {
-                withAnimation { activeScreen = .settings }
+                activeScreen = .settings
             } label: {
                 Image(systemName: "gearshape")
                     .font(.title2)
@@ -152,8 +134,7 @@ struct ChatView: View {
             ScrollView {
                 LazyVStack(spacing: 12) {
                     ForEach(messages) { msg in
-                        MessageBubble(message: msg)
-                            .id(msg.id)
+                        MessageBubble(message: msg).id(msg.id)
                     }
                     if isLoading { TypingIndicator() }
                     Color.clear.frame(height: 8).id("bottom")
@@ -161,8 +142,8 @@ struct ChatView: View {
                 .padding(.horizontal)
                 .padding(.top, 12)
                 .padding(.bottom, keyboardHeight > 0
-                         ? keyboardHeight + textViewHeight + 24
-                         : textViewHeight + 24)
+                    ? keyboardHeight + textViewHeight + 24
+                    : textViewHeight + 24)
                 .onChange(of: messages.count) { _, _ in
                     withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
                 }
@@ -200,12 +181,14 @@ struct ChatView: View {
                         .padding(.horizontal, 8)
                         .focused($isInputFocused)
                         .keyboardType(.asciiCapable)
-                        .onChange(of: inputText) { _, _ in updateHeight() }
+                        .onChange(of: inputText) { _, _ in
+                            let lines = inputText.components(separatedBy: .newlines).count
+                                + max(0, inputText.count / 35)
+                            textViewHeight = min(max(40, CGFloat(lines) * 22), 120)
+                        }
                 }
 
-                Button {
-                    send()
-                } label: {
+                Button { send() } label: {
                     Image(systemName: isLoading ? "stop.fill" : "paperplane.fill")
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundColor(.white)
@@ -222,29 +205,23 @@ struct ChatView: View {
         }
     }
 
-    // MARK: - Logic
+    // MARK: - Send
 
     private func send() {
         let prompt = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !prompt.isEmpty else { return }
-
         messages.append(ChatMessage(text: prompt, isUser: true))
         inputText = ""
         textViewHeight = 40
         isLoading = true
         isInputFocused = false
-
+        messages.append(ChatMessage(text: "", isUser: false))
+        let botIndex = messages.count - 1
         llm.onComplete = { reply in
-            self.messages.append(ChatMessage(text: reply, isUser: false))
+            self.messages[botIndex].text = reply
             self.isLoading = false
         }
         llm.send(prompt: prompt)
-    }
-
-    private func updateHeight() {
-        let lines = inputText.components(separatedBy: .newlines).count
-            + max(0, inputText.count / 35)
-        textViewHeight = min(max(40, CGFloat(lines) * 22), 120)
     }
 
     // MARK: - Colors
@@ -252,13 +229,11 @@ struct ChatView: View {
     private var appBackground: Color {
         colorScheme == .dark ? Color.black : Color(.systemBackground)
     }
-
     private var barColor: Color {
         colorScheme == .dark
             ? Color(red: 0.1, green: 0.1, blue: 0.15)
             : Color(red: 0.97, green: 0.98, blue: 1.0)
     }
-
     private var inputFieldColor: Color {
         colorScheme == .dark ? Color(red: 0.12, green: 0.12, blue: 0.18) : Color.white
     }
@@ -278,7 +253,7 @@ struct MessageBubble: View {
                 .foregroundColor(message.isUser ? .white : .primary)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
-                .background(message.isUser ? Color.blue : botBubbleColor)
+                .background(message.isUser ? Color.blue : botColor)
                 .cornerRadius(18)
                 .cornerRadius(4, corners: message.isUser ? .bottomRight : .bottomLeft)
                 .multilineTextAlignment(message.isUser ? .trailing : .leading)
@@ -289,7 +264,7 @@ struct MessageBubble: View {
         .frame(maxWidth: .infinity, alignment: message.isUser ? .trailing : .leading)
     }
 
-    private var botBubbleColor: Color {
+    private var botColor: Color {
         colorScheme == .dark
             ? Color(red: 0.15, green: 0.15, blue: 0.2)
             : Color(red: 0.92, green: 0.93, blue: 0.95)
@@ -310,19 +285,17 @@ struct TypingIndicator: View {
                     .scaleEffect(dotScale[i])
                     .foregroundColor(.gray)
                     .onAppear {
-                        withAnimation(
-                            .easeInOut(duration: 0.6).repeatForever().delay(Double(i) * 0.2)
-                        ) { dotScale[i] = 1.2 }
+                        withAnimation(.easeInOut(duration: 0.6).repeatForever().delay(Double(i) * 0.2)) {
+                            dotScale[i] = 1.2
+                        }
                     }
             }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
-        .background(
-            colorScheme == .dark
-                ? Color(red: 0.15, green: 0.15, blue: 0.2)
-                : Color(red: 0.92, green: 0.93, blue: 0.95)
-        )
+        .background(colorScheme == .dark
+            ? Color(red: 0.15, green: 0.15, blue: 0.2)
+            : Color(red: 0.92, green: 0.93, blue: 0.95))
         .cornerRadius(18)
         .cornerRadius(4, corners: .bottomLeft)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -349,8 +322,6 @@ struct RoundedCorner: Shape {
     }
 }
 
-// MARK: - Preview
-
 #Preview {
-    ChatView()
+    ChatView(activeScreen: .constant(.chat))
 }
