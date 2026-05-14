@@ -1,43 +1,12 @@
 import SwiftUI
 import Combine
 
-// MARK: - LLM Manager
-
-class LLMManager: NSObject, ObservableObject {
-    var onComplete: ((String) -> Void)?
-
-    func send(prompt: String) {
-        guard let url = URL(string: "https://mipilar.com/chat") else { return }
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try? JSONSerialization.data(withJSONObject: ["user_input": prompt])
-        URLSession.shared.dataTask(with: request) { data, _, _ in
-            guard let data = data, let raw = String(data: data, encoding: .utf8) else {
-                DispatchQueue.main.async { self.onComplete?("Error: no response") }
-                return
-            }
-            DispatchQueue.main.async { self.onComplete?(Self.stripThink(from: raw)) }
-        }.resume()
-    }
-
-    static func stripThink(from text: String) -> String {
-        var result = text
-        while let start = result.range(of: "<think>"),
-              let end = result.range(of: "</think>", range: start.upperBound..<result.endIndex) {
-            result.removeSubrange(start.lowerBound...end.upperBound)
-        }
-        return result.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-}
-
 // MARK: - Keyboard Publisher
-
 class KeyboardPublisher: ObservableObject {
     static let shared = KeyboardPublisher()
     @Published var keyboardHeight: CGFloat = 0
     private var cancellables = Set<AnyCancellable>()
-
+    
     init() {
         NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)
             .compactMap { ($0.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect)?.height }
@@ -52,22 +21,24 @@ class KeyboardPublisher: ObservableObject {
 }
 
 // MARK: - Chat View
-
 struct ChatView: View {
     @Binding var activeScreen: ActiveScreen
     @State private var messages: [ChatMessage] = []
     @State private var inputText = ""
     @State private var isLoading = false
     @State private var textViewHeight: CGFloat = 40
-    @State private var keyboardHeight: CGFloat = 0
     @State private var showSidebar = false
+    @State private var currentConversationId: String?
+    @State private var keyboardHeight: CGFloat = 0
     @FocusState private var isInputFocused: Bool
     @Environment(\.colorScheme) private var colorScheme
+    
     @StateObject private var llm = LLMManager()
-
+    @StateObject private var storageManager = ChatStorageManager.shared
+    @StateObject private var profileManager = UserProfileManager.shared
+    
     var body: some View {
         ZStack {
-            // Main chat
             VStack(spacing: 0) {
                 headerView
                 messagesView
@@ -79,22 +50,30 @@ struct ChatView: View {
                 withAnimation(.easeOut(duration: 0.25)) { keyboardHeight = h }
             }
             .ignoresSafeArea(.keyboard, edges: .bottom)
-
-            // Sidebar overlay
+            .onAppear {
+                if currentConversationId == nil {
+                    startNewConversation()
+                }
+            }
+            
             if showSidebar {
                 ChatHistoryView(
-                    messages: messages,
                     showSidebar: $showSidebar,
-                    activeScreen: $activeScreen
+                    currentConversationId: $currentConversationId,
+                    onConversationSelected: { conversationId in
+                        loadConversation(conversationId)
+                    },
+                    onNewConversation: {
+                        startNewConversation()
+                    }
                 )
                 .transition(.move(edge: .leading))
             }
         }
         .animation(.easeInOut(duration: 0.25), value: showSidebar)
     }
-
+    
     // MARK: - Header
-
     private var headerView: some View {
         HStack {
             Button {
@@ -104,15 +83,15 @@ struct ChatView: View {
                     .font(.title2)
                     .foregroundColor(.primary)
             }
-
+            
             Spacer()
-
+            
             Text("BMCC Advisor")
                 .font(.headline.bold())
                 .foregroundStyle(.blue)
-
+            
             Spacer()
-
+            
             Button {
                 activeScreen = .settings
             } label: {
@@ -126,9 +105,8 @@ struct ChatView: View {
         .background(barColor)
         .overlay(Divider(), alignment: .bottom)
     }
-
-    // MARK: - Messages
-
+    
+    // MARK: - Messages View
     private var messagesView: some View {
         ScrollViewReader { proxy in
             ScrollView {
@@ -153,9 +131,8 @@ struct ChatView: View {
             }
         }
     }
-
+    
     // MARK: - Input Bar
-
     private var inputBarView: some View {
         VStack(spacing: 0) {
             Divider()
@@ -165,7 +142,7 @@ struct ChatView: View {
                         .stroke(Color.gray.opacity(0.3), lineWidth: 1)
                         .background(RoundedRectangle(cornerRadius: 20).fill(inputFieldColor))
                         .frame(height: textViewHeight)
-
+                    
                     if inputText.isEmpty {
                         Text("Message Advisor…")
                             .foregroundColor(.gray.opacity(0.5))
@@ -173,7 +150,7 @@ struct ChatView: View {
                             .padding(.vertical, 11)
                             .allowsHitTesting(false)
                     }
-
+                    
                     TextEditor(text: $inputText)
                         .scrollContentBackground(.hidden)
                         .background(Color.clear)
@@ -187,8 +164,8 @@ struct ChatView: View {
                             textViewHeight = min(max(40, CGFloat(lines) * 22), 120)
                         }
                 }
-
-                Button { send() } label: {
+                
+                Button { sendMessage() } label: {
                     Image(systemName: isLoading ? "stop.fill" : "paperplane.fill")
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundColor(.white)
@@ -204,47 +181,124 @@ struct ChatView: View {
             .offset(y: -keyboardHeight)
         }
     }
-
-    // MARK: - Send
-
-    private func send() {
+    
+    // MARK: - Core Functions
+    private func startNewConversation() {
+        let newConversation = storageManager.createNewConversation(title: "New Chat")
+        currentConversationId = newConversation.id
+        messages = []
+        
+        for storedMsg in newConversation.messages {
+            let chatMessage = ChatMessage(text: storedMsg.text, isUser: storedMsg.isUser)
+            messages.append(chatMessage)
+        }
+    }
+    
+    private func loadConversation(_ conversationId: String) {
+        guard let conversation = storageManager.loadConversation(id: conversationId) else { return }
+        currentConversationId = conversation.id
+        messages = []
+        
+        for storedMsg in conversation.messages {
+            let chatMessage = ChatMessage(text: storedMsg.text, isUser: storedMsg.isUser)
+            messages.append(chatMessage)
+        }
+    }
+    
+    private func sendMessage() {
         let prompt = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !prompt.isEmpty else { return }
-        messages.append(ChatMessage(text: prompt, isUser: true))
+        
+        if currentConversationId == nil {
+            startNewConversation()
+        }
+        
+        // Create and display user message
+        let userMessage = ChatMessage(text: prompt, isUser: true)
+        messages.append(userMessage)
+        
+        // Save user message to storage
+        let storedUserMsg = StoredMessage(
+            id: userMessage.id.uuidString,
+            text: prompt,
+            isUser: true,
+            timestamp: userMessage.timestamp
+        )
+        saveMessageToStorage(storedUserMsg)
+        
+        // Clear input
         inputText = ""
         textViewHeight = 40
         isLoading = true
         isInputFocused = false
-        messages.append(ChatMessage(text: "", isUser: false))
+        
+        // Show typing indicator
+        let typingIndicator = ChatMessage(text: "", isUser: false)
+        messages.append(typingIndicator)
         let botIndex = messages.count - 1
+        
+        // Get conversation history
+        let conversationHistory = storageManager.getConversationHistory(for: currentConversationId!)
+        let profile = profileManager.currentProfile ?? UserProfile.defaultProfile
+        
         llm.onComplete = { reply in
-            self.messages[botIndex].text = reply
-            self.isLoading = false
+            DispatchQueue.main.async {
+                self.messages[botIndex].text = reply
+                
+                let assistantMessage = StoredMessage(
+                    text: reply,
+                    isUser: false,
+                    timestamp: Date()
+                )
+                self.saveMessageToStorage(assistantMessage)
+                self.isLoading = false
+            }
         }
-        llm.send(prompt: prompt)
+        
+        llm.send(
+            userMessage: prompt,
+            userProfile: profile,
+            conversationHistory: conversationHistory,
+            conversationId: currentConversationId!
+        )
     }
-
+    
+    private func saveMessageToStorage(_ message: StoredMessage) {
+        guard let conversationId = currentConversationId,
+              var conversation = storageManager.loadConversation(id: conversationId) else { return }
+        
+        conversation.messages.append(message)
+        conversation.lastUpdated = Date()
+        
+        if conversation.messages.first(where: { $0.isUser })?.id == message.id {
+            conversation.title = String(message.text.prefix(30))
+        }
+        
+        storageManager.saveConversation(conversation)
+        storageManager.loadAllConversationsMetadata()
+    }
+    
     // MARK: - Colors
-
     private var appBackground: Color {
         colorScheme == .dark ? Color.black : Color(.systemBackground)
     }
+    
     private var barColor: Color {
         colorScheme == .dark
             ? Color(red: 0.1, green: 0.1, blue: 0.15)
             : Color(red: 0.97, green: 0.98, blue: 1.0)
     }
+    
     private var inputFieldColor: Color {
         colorScheme == .dark ? Color(red: 0.12, green: 0.12, blue: 0.18) : Color.white
     }
 }
 
 // MARK: - Message Bubble
-
 struct MessageBubble: View {
     let message: ChatMessage
     @Environment(\.colorScheme) private var colorScheme
-
+    
     var body: some View {
         HStack {
             if message.isUser { Spacer(minLength: 60) }
@@ -263,7 +317,7 @@ struct MessageBubble: View {
         }
         .frame(maxWidth: .infinity, alignment: message.isUser ? .trailing : .leading)
     }
-
+    
     private var botColor: Color {
         colorScheme == .dark
             ? Color(red: 0.15, green: 0.15, blue: 0.2)
@@ -272,11 +326,10 @@ struct MessageBubble: View {
 }
 
 // MARK: - Typing Indicator
-
 struct TypingIndicator: View {
     @State private var dotScale: [CGFloat] = [0.5, 0.7, 0.5]
     @Environment(\.colorScheme) private var colorScheme
-
+    
     var body: some View {
         HStack(spacing: 6) {
             ForEach(0..<3, id: \.self) { i in
@@ -303,7 +356,6 @@ struct TypingIndicator: View {
 }
 
 // MARK: - Corner Radius Helper
-
 extension View {
     func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
         clipShape(RoundedCorner(radius: radius, corners: corners))

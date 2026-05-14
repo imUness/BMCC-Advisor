@@ -18,6 +18,7 @@ struct SettingsView: View {
     @AppStorage("saveChatHistory") private var saveChatHistory: Bool = true
     @AppStorage("notifications") private var notifications: Bool = true
     
+    
     let scheduleOptions = ["Full-time", "Part-time"]
     let semesters = ["Fall", "Spring", "Summer"]
     let graduationYears = Array(2025...2035).map { String($0) }
