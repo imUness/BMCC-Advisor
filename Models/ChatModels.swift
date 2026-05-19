@@ -15,13 +15,14 @@ struct UserProfile: Codable {
     var scheduleType: String
     var startSemester: String
     var startYear: String
+    var gradSemester: String
     var graduationYear: String
+    var completedCourses: [String] = []
     
     var fullName: String {
         "\(firstName) \(lastName)".trimmingCharacters(in: .whitespaces)
     }
     
-    // ADD THIS DEFAULT PROFILE
     static let defaultProfile = UserProfile(
         userId: UUID().uuidString,
         firstName: "",
@@ -30,7 +31,9 @@ struct UserProfile: Codable {
         scheduleType: "Full-time",
         startSemester: "Fall",
         startYear: "",
-        graduationYear: ""
+        gradSemester: "Spring",
+        graduationYear: "",
+        completedCourses: []
     )
 }
 

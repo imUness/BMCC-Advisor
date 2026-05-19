@@ -2,142 +2,193 @@
 //  LLMManager.swift
 //  BMCC_Advisor
 //
-//  Created by Youness El Akri on 5/7/26.
-//
 
 import Foundation
-import Combine
+import Combine   // <-- add this line
 
-class LLMManager: NSObject, ObservableObject {
+class LLMManager: NSObject, ObservableObject, URLSessionDataDelegate {
+
+    var onToken:    ((String) -> Void)?
     var onComplete: ((String) -> Void)?
-    
+
+    @Published var isThinking = false
+
+    private let baseURL = "https://mipilar.com"
+
+    // Keep session alive as instance property — NOT local var
+    // (local var gets deallocated and delegate never fires)
+    private var session: URLSession!
+    private var activeTask: URLSessionDataTask?
+    private var accumulated = Data()
+
+    override init() {
+        super.init()
+        // Session lives as long as LLMManager lives
+        session = URLSession(
+            configuration: .default,
+            delegate: self,
+            delegateQueue: nil          // background queue, safe
+        )
+    }
+
+    // ─── Send ────────────────────────────────────────────────────────────────
+
     func send(
         userMessage: String,
         userProfile: UserProfile,
         conversationHistory: [StoredMessage],
         conversationId: String
     ) {
-        // Build the full prompt
-        let fullPrompt = buildFullPrompt(
-            userMessage: userMessage,
-            profile: userProfile,
-            history: conversationHistory
-        )
-        
-        // Print to console for debugging
-        print("\n========== PROMPT SENT TO LLM ==========")
-        print(fullPrompt)
-        print("========================================\n")
-        
-        // Send to API
-        guard let url = URL(string: "https://mipilar.com/chat") else {
-            DispatchQueue.main.async { self.onComplete?("Error: Invalid URL") }
+        stop()                          // cancel previous if any
+        accumulated   = Data()
+        isThinking    = true
+
+        // ── Read every field your Settings screen saves ──────────────────────
+        // Print ALL fields so we can see what's empty
+        print("\n========== SENDING REQUEST ==========")
+        print("Message   : \(userMessage)")
+        print("Major     : \(userProfile.major)")
+        print("Name      : \(userProfile.fullName)")
+        print("Schedule  : \(userProfile.scheduleType)")
+        print("StartSem  : \(userProfile.startSemester)")
+        print("StartYear : \(userProfile.startYear)")
+        print("GradSem   : \(userProfile.gradSemester)")
+        print("GradYear  : \(userProfile.graduationYear)")
+        print("Completed : \(userProfile.completedCourses)")
+        print("=====================================\n")
+
+        let body: [String: Any] = [
+            "user_input":             userMessage,
+            "student_id":             conversationId,
+            "name":                   userProfile.fullName,
+            "major":                  userProfile.major,
+            "schedule_type":          userProfile.scheduleType,
+            "start_semester":         userProfile.startSemester,
+            "start_year":             userProfile.startYear,
+            "expected_grad_semester": userProfile.gradSemester,
+            "expected_grad_year":     userProfile.graduationYear,
+            "completed_courses":      userProfile.completedCourses
+        ]
+
+        guard
+            let url      = URL(string: "\(baseURL)/chat"),
+            let bodyData = try? JSONSerialization.data(withJSONObject: body)
+        else {
+            finish(fallback("Bad URL or encoding"))
             return
         }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        let body: [String: Any] = [
-            "user_input": fullPrompt,
-            "conversation_id": conversationId,
-            "user_id": userProfile.userId
-        ]
-        
-        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
-        
-        URLSession.shared.dataTask(with: request) { [weak self] data, _, error in
-            guard let self = self else { return }
-            
-            if let error = error {
-                DispatchQueue.main.async {
-                    self.onComplete?("Error: \(error.localizedDescription)")
-                }
-                return
-            }
-            
-            guard let data = data, let raw = String(data: data, encoding: .utf8) else {
-                DispatchQueue.main.async {
-                    self.onComplete?("Error: No response from server")
-                }
-                return
-            }
-            
-            let cleanedResponse = Self.stripThink(from: raw)
-            DispatchQueue.main.async {
-                self.onComplete?(cleanedResponse)
-            }
-        }.resume()
+
+        var req = URLRequest(url: url)
+        req.httpMethod        = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody          = bodyData
+        req.timeoutInterval   = 90
+
+        activeTask = session.dataTask(with: req)
+        activeTask?.resume()
     }
-    
-    private func buildFullPrompt(userMessage: String, profile: UserProfile, history: [StoredMessage]) -> String {
-        let systemPrompt = buildSystemPrompt(from: profile)
-        let historyText = formatConversationHistory(history)
-        
-        return """
-        \(systemPrompt)
-        
-        CONVERSATION HISTORY:
-        \(historyText)
-        
-        STUDENT QUESTION: \(userMessage)
-        
-        Please respond as BMCC Advisor based on the student's context above.
-        """
+
+    // ─── Stop ────────────────────────────────────────────────────────────────
+
+    func stop() {
+        activeTask?.cancel()
+        activeTask = nil
+        DispatchQueue.main.async { self.isThinking = false }
     }
-    
-    private func buildSystemPrompt(from profile: UserProfile) -> String {
-        let currentYear = Calendar.current.component(.year, from: Date())
-        let currentMonth = Calendar.current.component(.month, from: Date())
-        let currentSemester = currentMonth >= 8 ? "Fall \(currentYear)" : "Spring \(currentYear)"
-        
-        return """
-        You are BMCC Advisor, an academic advisor for Borough of Manhattan Community College (CUNY).
-        
-        STUDENT PROFILE:
-        - Name: \(profile.fullName)
-        - User ID: \(profile.userId)
-        - Major: \(profile.major)
-        - Schedule: \(profile.scheduleType) (\(profile.scheduleType == "Full-time" ? "12-15 credits/semester" : "6-9 credits/semester"))
-        - Started: \(profile.startSemester) \(profile.startYear)
-        - Expected Graduation: \(profile.graduationYear)
-        - Current Semester: \(currentSemester)
-        
-        IMPORTANT RULES:
-        1. Always reference actual BMCC courses with their codes (e.g., CSC 111, MAT 301)
-        2. Verify prerequisites before recommending any course
-        3. Consider the student's schedule type when planning credit load
-        4. Calculate remaining semesters based on graduation year
-        5. Be helpful, accurate, and honest. If unsure, say "I recommend speaking with your academic advisor"
-        6. Never invent courses or requirements not in the BMCC catalog
-        7. Format responses clearly with bullet points when listing multiple items
-        
-        BMCC CORE REQUIREMENTS:
-        - Required Core: English Composition (ENG 101, ENG 201), Math (choose one), Life Science (choose one)
-        - Flexible Core: 18 credits (1 from each of 5 areas + 1 additional)
-        
-        Respond naturally as a helpful academic advisor.
-        """
-    }
-    
-    private func formatConversationHistory(_ history: [StoredMessage]) -> String {
-        // Get last 10 messages for context
-        let lastMessages = history.suffix(10)
-        guard !lastMessages.isEmpty else { return "No previous messages." }
-        
-        return lastMessages.map { msg in
-            let role = msg.isUser ? "Student" : "Advisor"
-            return "\(role): \(msg.text)"
-        }.joined(separator: "\n")
-    }
-    
-    static func stripThink(from text: String) -> String {
-        var result = text
-        while let start = result.range(of: "<think>"),
-              let end = result.range(of: "</think>", range: start.upperBound..<result.endIndex) {
-            result.removeSubrange(start.lowerBound...end.upperBound)
+
+    // ─── URLSessionDataDelegate ──────────────────────────────────────────────
+
+    func urlSession(_ session: URLSession,
+                    dataTask: URLSessionDataTask,
+                    didReceive data: Data) {
+
+        accumulated.append(data)
+
+        // Forward raw text chunk to UI (typing effect)
+        if let text = String(data: data, encoding: .utf8) {
+            DispatchQueue.main.async { self.onToken?(text) }
         }
-        return result.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    func urlSession(_ session: URLSession,
+                    task: URLSessionTask,
+                    didCompleteWithError error: Error?) {
+
+        // Cancelled = user tapped stop, ignore
+        if let e = error as NSError?, e.code == NSURLErrorCancelled {
+            DispatchQueue.main.async { self.isThinking = false }
+            return
+        }
+
+        let raw = String(data: accumulated, encoding: .utf8) ?? ""
+
+        print("\n━━━━ RAW FROM SERVER ━━━━")
+        print(raw.prefix(500))
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━\n")
+
+        // Extract valid JSON from the streamed tokens
+        let result = extractJSON(from: raw) ?? fallback(
+            error != nil
+                ? "Connection error: \(error!.localizedDescription)"
+                : "Server returned no JSON."
+        )
+
+        finish(result)
+    }
+
+    // ─── Helpers ─────────────────────────────────────────────────────────────
+
+    private func finish(_ json: String) {
+        DispatchQueue.main.async {
+            self.isThinking = false
+            self.onComplete?(json)
+        }
+    }
+
+    /// Find outermost { } in raw text and validate it parses as AdvisorResponse
+    func extractJSON(from raw: String) -> String? {
+        var text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // Strip ```json fences if model added them
+        if text.hasPrefix("```") {
+            text = text
+                .components(separatedBy: "\n")
+                .filter { !$0.hasPrefix("```") }
+                .joined(separator: "\n")
+        }
+
+        guard let startIdx = text.firstIndex(of: "{") else { return nil }
+
+        var depth = 0
+        var endIdx: String.Index?
+
+        for i in text[startIdx...].indices {
+            switch text[i] {
+            case "{": depth += 1
+            case "}":
+                depth -= 1
+                if depth == 0 { endIdx = i }
+            default: break
+            }
+            if depth == 0 && endIdx != nil { break }
+        }
+
+        guard let end = endIdx else { return nil }
+
+        let candidate = String(text[startIdx...end])
+
+        // Must decode as AdvisorResponse to be considered valid
+        guard
+            let data = candidate.data(using: .utf8),
+            (try? JSONDecoder().decode(AdvisorResponse.self, from: data)) != nil
+        else { return nil }
+
+        return candidate
+    }
+
+    func fallback(_ message: String) -> String {
+        let obj: [String: Any] = ["message": message, "plan": NSNull()]
+        let data = try! JSONSerialization.data(withJSONObject: obj)
+        return String(data: data, encoding: .utf8)!
     }
 }

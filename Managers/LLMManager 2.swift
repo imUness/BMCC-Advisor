@@ -1,4 +1,12 @@
 //
+//  LLMManager 2.swift
+//  BMCC_Advisor
+//
+//  Created by Youness El Akri on 5/12/26.
+//
+
+
+//
 //  LLMManager.swift
 //  BMCC_Advisor
 //

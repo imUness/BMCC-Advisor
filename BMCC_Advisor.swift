@@ -10,21 +10,12 @@ enum ActiveScreen: Equatable {
     case onboard
 }
 
-// MARK: - Model
-
-struct ChatMessage: Identifiable {
-    let id = UUID()
-    var text: String
-    let isUser: Bool
-    let timestamp: Date = Date()
-}
-
 // MARK: - Root View
 
 struct RootView: View {
     @State private var activeScreen: ActiveScreen = .login
     @AppStorage("hasOnboarded") var hasOnboarded: Bool = false
-    @AppStorage("hasLoggedIn") var hasLoggedIn: Bool = false
+    @AppStorage("isLoggedIn") var isLoggedIn: Bool = false  // Just this one flag
 
     var body: some View {
         ZStack {
@@ -44,17 +35,17 @@ struct RootView: View {
     }
     
     func determineInitialScreen() {
-        // First time ever opening the app - start with Login
-        if !hasOnboarded {
-            activeScreen = .login
-        }
-        // User has completed onboarding but not logged in
-        else if !hasLoggedIn {
-            activeScreen = .login
-        }
-        // User has completed everything - go to chat
-        else {
+        // User is logged in AND completed onboarding
+        if isLoggedIn && hasOnboarded {
             activeScreen = .chat
+        }
+        // User is logged in but hasn't completed onboarding
+        else if isLoggedIn && !hasOnboarded {
+            activeScreen = .onboard
+        }
+        // User not logged in
+        else {
+            activeScreen = .login
         }
     }
 }

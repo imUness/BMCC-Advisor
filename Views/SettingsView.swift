@@ -4,6 +4,9 @@ struct SettingsView: View {
     @Binding var activeScreen: ActiveScreen
     @AppStorage("hasOnboarded") var hasOnboarded: Bool = false
     @AppStorage("hasLoggedIn") var hasLoggedIn: Bool = false
+    @AppStorage("isLoggedIn") var isLoggedIn: Bool = false
+    
+    @StateObject private var profileManager = UserProfileManager.shared
     
     // User Profile Settings
     @AppStorage("firstName") var firstName = ""
@@ -12,12 +15,16 @@ struct SettingsView: View {
     @AppStorage("scheduleType") var scheduleType = "Full-time"
     @AppStorage("startSemester") var startSemester = "Fall"
     @AppStorage("startYear") var startYear = ""
+    @AppStorage("gradSemester") var gradSemester = "Spring"
     @AppStorage("graduationYear") var graduationYear = ""
+    @AppStorage("completedCoursesData") var completedCoursesData: String = "[]"
     
     @AppStorage("aiTone") private var aiTone: String = "Balanced"
     @AppStorage("saveChatHistory") private var saveChatHistory: Bool = true
     @AppStorage("notifications") private var notifications: Bool = true
     
+    @State private var completedCourses: [String] = []
+    @State private var showCompletedCoursesSheet = false
     
     let scheduleOptions = ["Full-time", "Part-time"]
     let semesters = ["Fall", "Spring", "Summer"]
@@ -53,7 +60,6 @@ struct SettingsView: View {
         "Data Science (A.S.)",
         "Digital Marketing (A.S.)",
         "Economics (A.A.)",
-        "Engineering Science (A.S.)",
         "Ethnic Studies (A.A.)",
         "Financial Management (A.S.)",
         "Gender and Women's Studies (A.A.)",
@@ -95,6 +101,44 @@ struct SettingsView: View {
         "Writing and Literature (A.A.)"
     ]
     
+    // MARK: - Profile Sync Functions
+    private func syncProfileToManager() {
+        let updatedProfile = UserProfile(
+            userId: profileManager.currentProfile?.userId ?? UUID().uuidString,
+            firstName: firstName,
+            lastName: lastName,
+            major: major,
+            scheduleType: scheduleType,
+            startSemester: startSemester,
+            startYear: startYear,
+            gradSemester: gradSemester,
+            graduationYear: graduationYear,
+            completedCourses: completedCourses
+        )
+        profileManager.updateProfile(updatedProfile)
+        
+        print("✅ Settings updated - Profile: \(updatedProfile.fullName), Completed Courses: \(completedCourses.count)")
+    }
+    
+    private func onSettingChange() {
+        syncProfileToManager()
+    }
+    
+    private func loadCompletedCourses() {
+        if let jsonData = completedCoursesData.data(using: .utf8),
+           let savedCourses = try? JSONDecoder().decode([String].self, from: jsonData) {
+            completedCourses = savedCourses
+        }
+    }
+    
+    private func saveCompletedCourses() {
+        if let jsonData = try? JSONEncoder().encode(completedCourses),
+           let jsonString = String(data: jsonData, encoding: .utf8) {
+            completedCoursesData = jsonString
+        }
+        onSettingChange()
+    }
+    
     var body: some View {
         NavigationView {
             List {
@@ -103,8 +147,12 @@ struct SettingsView: View {
                         Text("First Name").foregroundColor(.secondary)
                         Spacer()
                         Text(firstName).foregroundColor(.primary)
-                        + Text(" ").foregroundColor(.primary)
-                        + Text(lastName).foregroundColor(.primary)
+                    }
+                    
+                    HStack {
+                        Text("Last Name").foregroundColor(.secondary)
+                        Spacer()
+                        Text(lastName).foregroundColor(.primary)
                     }
                 }
                 
@@ -121,7 +169,10 @@ struct SettingsView: View {
                     
                     Menu {
                         ForEach(scheduleOptions, id: \.self) { option in
-                            Button(action: { scheduleType = option }) {
+                            Button(action: {
+                                scheduleType = option
+                                onSettingChange()
+                            }) {
                                 HStack {
                                     Text(option)
                                     if scheduleType == option { Image(systemName: "checkmark") }
@@ -138,7 +189,10 @@ struct SettingsView: View {
                     
                     Menu {
                         ForEach(semesters, id: \.self) { semester in
-                            Button(action: { startSemester = semester }) {
+                            Button(action: {
+                                startSemester = semester
+                                onSettingChange()
+                            }) {
                                 HStack {
                                     Text(semester)
                                     if startSemester == semester { Image(systemName: "checkmark") }
@@ -155,7 +209,10 @@ struct SettingsView: View {
                     
                     Menu {
                         ForEach(graduationYears, id: \.self) { year in
-                            Button(action: { startYear = year }) {
+                            Button(action: {
+                                startYear = year
+                                onSettingChange()
+                            }) {
                                 HStack {
                                     Text(year)
                                     if startYear == year { Image(systemName: "checkmark") }
@@ -172,8 +229,31 @@ struct SettingsView: View {
                     }
                     
                     Menu {
+                        ForEach(semesters, id: \.self) { semester in
+                            Button(action: {
+                                gradSemester = semester
+                                onSettingChange()
+                            }) {
+                                HStack {
+                                    Text(semester)
+                                    if gradSemester == semester { Image(systemName: "checkmark") }
+                                }
+                            }
+                        }
+                    } label: {
+                        HStack {
+                            Text("Graduation Semester").foregroundColor(.secondary)
+                            Spacer()
+                            Text(gradSemester).foregroundColor(.blue)
+                        }
+                    }
+                    
+                    Menu {
                         ForEach(graduationYears, id: \.self) { year in
-                            Button(action: { graduationYear = year }) {
+                            Button(action: {
+                                graduationYear = year
+                                onSettingChange()
+                            }) {
                                 HStack {
                                     Text(year)
                                     if graduationYear == year { Image(systemName: "checkmark") }
@@ -190,7 +270,47 @@ struct SettingsView: View {
                     }
                 }
                 
-               
+                // MARK: - Completed Courses Section
+                Section(header: Text("Completed Courses")) {
+                    if completedCourses.isEmpty {
+                        Text("No completed courses added")
+                            .foregroundColor(.secondary)
+                            .font(.caption)
+                    } else {
+                        FlowLayout(spacing: 8) {
+                            ForEach(completedCourses, id: \.self) { course in
+                                HStack(spacing: 4) {
+                                    Text(course)
+                                        .font(.subheadline)
+                                    Button(action: {
+                                        completedCourses.removeAll { $0 == course }
+                                        saveCompletedCourses()
+                                    }) {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .font(.caption)
+                                            .foregroundColor(.gray)
+                                    }
+                                }
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(Color.blue.opacity(0.2))
+                                .cornerRadius(15)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+                    
+                    Button(action: {
+                        showCompletedCoursesSheet = true
+                    }) {
+                        HStack {
+                            Image(systemName: "plus.circle")
+                                .foregroundColor(.blue)
+                            Text("Add Completed Course")
+                                .foregroundColor(.blue)
+                        }
+                    }
+                }
                 
                 Section(header: Text("Academic Tools")) {
                     Link(destination: URL(string: "https://degreeworks.cuny.edu")!) {
@@ -213,10 +333,34 @@ struct SettingsView: View {
                 
                 Section(header: Text("Account")) {
                     Button(action: {
-                        firstName = ""; lastName = ""; major = ""
-                        scheduleType = "Full-time"; startSemester = "Fall"
-                        startYear = ""; graduationYear = ""
-                        hasLoggedIn = false; hasOnboarded = false
+                        firstName = ""
+                        lastName = ""
+                        major = ""
+                        scheduleType = "Full-time"
+                        startSemester = "Fall"
+                        startYear = ""
+                        gradSemester = "Spring"
+                        graduationYear = ""
+                        completedCourses = []
+                        completedCoursesData = "[]"
+                        hasLoggedIn = false
+                        hasOnboarded = false
+                        isLoggedIn = false
+                        
+                        let emptyProfile = UserProfile(
+                            userId: profileManager.currentProfile?.userId ?? UUID().uuidString,
+                            firstName: "",
+                            lastName: "",
+                            major: "",
+                            scheduleType: "Full-time",
+                            startSemester: "Fall",
+                            startYear: "",
+                            gradSemester: "Spring",
+                            graduationYear: "",
+                            completedCourses: []
+                        )
+                        profileManager.updateProfile(emptyProfile)
+                        
                         activeScreen = .login
                     }) {
                         HStack {
@@ -251,6 +395,94 @@ struct SettingsView: View {
                 }
             }
         }
+        .onAppear {
+            loadCompletedCourses()
+        }
+        .onChange(of: firstName) { _, _ in onSettingChange() }
+        .onChange(of: lastName) { _, _ in onSettingChange() }
+        .onChange(of: major) { _, _ in onSettingChange() }
+        .onChange(of: scheduleType) { _, _ in onSettingChange() }
+        .onChange(of: startSemester) { _, _ in onSettingChange() }
+        .onChange(of: startYear) { _, _ in onSettingChange() }
+        .onChange(of: gradSemester) { _, _ in onSettingChange() }
+        .onChange(of: graduationYear) { _, _ in onSettingChange() }
+        .sheet(isPresented: $showCompletedCoursesSheet) {
+            AddCourseSheet(completedCourses: $completedCourses, onSave: {
+                saveCompletedCourses()
+            })
+        }
+    }
+}
+
+// MARK: - Add Course Sheet
+struct AddCourseSheet: View {
+    @Binding var completedCourses: [String]
+    let onSave: () -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var courseInput = ""
+    
+    let commonCourses = [
+        "ENG 101", "ENG 201", "MAT 100", "MAT 104", "MAT 150", "MAT 161.5", "MAT 206", "MAT 301",
+        "CSC 101", "CSC 111", "CSC 211", "CSC 231", "CSC 232", "CIS 100", "CIS 165",
+        "BIO 110", "BIO 210", "BIO 425", "BIO 426", "CHE 121", "CHE 201", "CHE 202",
+        "PHY 110", "PHY 215", "PHY 225", "PSY 100", "PSY 200", "SOC 100", "HIS 101",
+        "HIS 102", "POL 100", "ART 100", "MUS 100", "SPE 100", "ECO 201", "ECO 202"
+    ]
+    
+    var filteredCourses: [String] {
+        if courseInput.isEmpty { return [] }
+        return commonCourses.filter {
+            $0.lowercased().contains(courseInput.lowercased())
+        }.prefix(10).map { String($0) }
+    }
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 20) {
+                TextField("Search for a course...", text: $courseInput)
+                    .padding()
+                    .background(Color(.systemGray6))
+                    .cornerRadius(10)
+                    .autocapitalization(.allCharacters)
+                    .padding(.horizontal)
+                
+                if !filteredCourses.isEmpty {
+                    List(filteredCourses, id: \.self) { course in
+                        Button(action: {
+                            if !completedCourses.contains(course) {
+                                completedCourses.append(course)
+                                onSave()
+                                dismiss()
+                            }
+                        }) {
+                            HStack {
+                                Text(course)
+                                Spacer()
+                                if completedCourses.contains(course) {
+                                    Image(systemName: "checkmark")
+                                        .foregroundColor(.green)
+                                }
+                            }
+                        }
+                    }
+                    .listStyle(.plain)
+                } else {
+                    Spacer()
+                    Text("Type to search for courses")
+                        .foregroundColor(.secondary)
+                    Spacer()
+                }
+            }
+            .navigationTitle("Add Course")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -267,10 +499,12 @@ struct MajorPickerView: View {
                 dismiss()
             }) {
                 HStack {
-                    Text(major).foregroundColor(.primary)
+                    Text(major)
+                        .foregroundColor(.primary)
                     Spacer()
                     if major == selectedMajor {
-                        Image(systemName: "checkmark").foregroundColor(.blue)
+                        Image(systemName: "checkmark")
+                            .foregroundColor(.blue)
                     }
                 }
             }
@@ -280,11 +514,14 @@ struct MajorPickerView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button("Done") { dismiss() }
+                Button("Done") {
+                    dismiss()
+                }
             }
         }
     }
 }
+
 
 #Preview {
     SettingsView(activeScreen: .constant(.settings))

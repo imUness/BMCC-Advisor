@@ -3,8 +3,11 @@ import SwiftUI
 struct LoginView: View {
     @Binding var activeScreen: ActiveScreen
     @Environment(\.colorScheme) var colorScheme
+    @AppStorage("isLoggedIn") var isLoggedIn: Bool = false
+    @AppStorage("userId") var userId: String = ""  // Store user ID
     
     @FocusState private var focusedField: Field?
+    
     
     enum Field {
         case loginUsername
@@ -197,15 +200,12 @@ struct LoginView: View {
             // Footer - Outside ScrollView to keep it at bottom
             VStack(spacing: 12) {
                 Button {
+                    isLoggedIn = true
+                    userId = UUID().uuidString
+                    print("🆓 GUEST USER ID: \(userId)")
                     activeScreen = .chat
                 } label: {
                     Text("Continue as Guest")
-                        .bold()
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color(.systemGray5))
-                        .foregroundColor(.primary)
-                        .cornerRadius(10)
                 }
                 .padding(.horizontal)
 
@@ -224,8 +224,17 @@ struct LoginView: View {
         let u = loginUsername.trimmingCharacters(in: .whitespaces).lowercased()
         let p = loginPassword.trimmingCharacters(in: .whitespaces)
         if mockUsers[u] == p {
+            isLoggedIn = true
+            userId = UUID().uuidString  // Generate and save user ID
+            
+            // Print user ID
+            print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+            print("🆓 USER ID: \(userId)")
+            print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+            
             activeScreen = .onboard
-        } else {
+        }
+        else {
             errorMessage = "Invalid username or password."
         }
     }
