@@ -4,6 +4,10 @@
 	&emsp;Added all majors  
 	&emsp;Fixed login bugs  
 
+26 May 2026:  
+	&emsp;Made rep public && updated README.md
+
+	   
 # BMCC Advisor
 
 ## AI-Powered Academic Assistant for BMCC Students
