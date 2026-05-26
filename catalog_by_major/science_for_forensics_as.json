@@ -1,0 +1,727 @@
+{
+  "major": "Science for Forensics",
+  "degree": "A.S.",
+  "plan_code": "SFF-AS",
+  "department": "Science",
+  "total_credits": 60,
+  "description": "Forensic-science focused transfer pathway combining biology, chemistry, and criminal justice.",
+  "catalog_url": "https://bmcc.catalog.cuny.edu/programs/SFF-AS",
+  "requirement_groups": [
+    {
+      "name": "Required Common Core",
+      "credits": 12,
+      "courses": [
+        "ENG 101",
+        "ENG 201",
+        "MAT 206",
+        "BIO 110"
+      ]
+    },
+    {
+      "name": "Flexible Common Core",
+      "credits": 18,
+      "courses": [
+        "HIS 121",
+        "HIS 101",
+        "ART 100",
+        "PSY 100",
+        "SOC 100",
+        "BIO 210"
+      ]
+    },
+    {
+      "name": "Science Required",
+      "credits": 18,
+      "courses": [
+        "CHE 201",
+        "CHE 202",
+        "PHY 110"
+      ]
+    },
+    {
+      "name": "Forensic Component",
+      "credits": 12,
+      "courses": [
+        "CRJ 101",
+        "CRJ 202",
+        "ACC 295"
+      ]
+    }
+  ],
+  "verified": false,
+  "common_core": {
+    "total_credits": 30,
+    "required_core": {
+      "credits": 12,
+      "areas": [
+        {
+          "area": "English Composition",
+          "courses_required": 2,
+          "approved_courses": [
+            "ENG 101",
+            "ENG 201"
+          ]
+        },
+        {
+          "area": "Mathematical and Quantitative Reasoning",
+          "courses_required": 1,
+          "approved_courses": [
+            "MAT 100",
+            "MAT 104",
+            "MAT 150",
+            "MAT 161.5",
+            "MAT 206",
+            "MAT 301"
+          ]
+        },
+        {
+          "area": "Life and Physical Sciences",
+          "courses_required": 1,
+          "approved_courses": [
+            "BIO 110",
+            "BIO 425",
+            "CHE 121",
+            "CHE 201",
+            "PHY 110",
+            "PHY 215"
+          ]
+        }
+      ]
+    },
+    "flexible_core": {
+      "credits": 18,
+      "rule": "One course from each of the 5 areas + one additional from any. Max 2 courses per discipline.",
+      "areas": [
+        {
+          "area": "World Cultures and Global Issues",
+          "approved_courses": [
+            "ANT 100",
+            "HIS 121",
+            "HIS 122",
+            "SPN 100",
+            "FRN 100"
+          ]
+        },
+        {
+          "area": "U.S. Experience in its Diversity",
+          "approved_courses": [
+            "HIS 101",
+            "HIS 102",
+            "POL 100",
+            "ETH 100"
+          ]
+        },
+        {
+          "area": "Creative Expression",
+          "approved_courses": [
+            "ART 100",
+            "MUS 100",
+            "THE 100",
+            "SPE 100"
+          ]
+        },
+        {
+          "area": "Individual and Society",
+          "approved_courses": [
+            "PSY 100",
+            "SOC 100",
+            "ECO 201",
+            "PHI 100",
+            "WGS 100"
+          ]
+        },
+        {
+          "area": "Scientific World",
+          "approved_courses": [
+            "BIO 210",
+            "CHE 202",
+            "PHY 225",
+            "CSC 101"
+          ]
+        }
+      ]
+    }
+  },
+  "courses": {
+    "ENG 101": {
+      "title": "English Composition I",
+      "credits": 3,
+      "prerequisites": [],
+      "description": "Introduction to college-level writing. Students learn to compose academic essays with effective thesis statements, organization, evidence, and clarity. Includes critical reading and revision.",
+      "typically_offered": [
+        "Fall",
+        "Spring",
+        "Summer"
+      ],
+      "category": "common_core_required",
+      "common_core_area": "English Composition",
+      "verified": true
+    },
+    "ENG 201": {
+      "title": "Introduction to Literature",
+      "credits": 3,
+      "prerequisites": [
+        "ENG 101"
+      ],
+      "description": "Continuation of ENG 101 with focus on literary analysis. Students read and write about fiction, poetry, and drama while developing research and argumentative writing skills.",
+      "typically_offered": [
+        "Fall",
+        "Spring",
+        "Summer"
+      ],
+      "category": "common_core_required",
+      "common_core_area": "English Composition",
+      "verified": true
+    },
+    "MAT 100": {
+      "title": "Fundamentals of Mathematics I",
+      "credits": 3,
+      "prerequisites": [],
+      "description": "Whole numbers, fractions, decimals, percentages, ratios, and an introduction to algebra. Designed to satisfy the MQR Common Core requirement for non-STEM majors.",
+      "typically_offered": [
+        "Fall",
+        "Spring",
+        "Summer"
+      ],
+      "category": "common_core_required",
+      "common_core_area": "Mathematical and Quantitative Reasoning",
+      "verified": true
+    },
+    "MAT 104": {
+      "title": "Algebra & Trigonometry / Quantitative Reasoning",
+      "credits": 3,
+      "prerequisites": [
+        "MAT 051 or placement"
+      ],
+      "description": "Algebra topics including functions, exponents, logarithms, and trigonometry. Required for nursing and several health programs.",
+      "typically_offered": [
+        "Fall",
+        "Spring",
+        "Summer"
+      ],
+      "category": "common_core_required",
+      "common_core_area": "Mathematical and Quantitative Reasoning",
+      "verified": true
+    },
+    "MAT 150": {
+      "title": "Introduction to Statistics",
+      "credits": 3,
+      "prerequisites": [
+        "MAT 051 or placement"
+      ],
+      "description": "Descriptive statistics, probability, sampling, hypothesis testing, correlation, and regression. Common math choice for social-science and health majors.",
+      "typically_offered": [
+        "Fall",
+        "Spring",
+        "Summer"
+      ],
+      "category": "common_core_required",
+      "common_core_area": "Mathematical and Quantitative Reasoning",
+      "verified": true
+    },
+    "MAT 161.5": {
+      "title": "Mathematics Literacy & Quantitative Reasoning",
+      "credits": 4,
+      "prerequisites": [],
+      "description": "Co-requisite quantitative reasoning course covering numeracy, proportional reasoning, algebraic reasoning, and basic statistics for non-STEM majors.",
+      "typically_offered": [
+        "Fall",
+        "Spring"
+      ],
+      "category": "common_core_required",
+      "common_core_area": "Mathematical and Quantitative Reasoning",
+      "verified": true
+    },
+    "MAT 206": {
+      "title": "Pre-Calculus",
+      "credits": 4,
+      "prerequisites": [
+        "MAT 56 or placement"
+      ],
+      "description": "Functions, polynomial and rational functions, exponential and logarithmic functions, trigonometry, conic sections. Prepares students for calculus.",
+      "typically_offered": [
+        "Fall",
+        "Spring",
+        "Summer"
+      ],
+      "category": "common_core_required",
+      "common_core_area": "Mathematical and Quantitative Reasoning",
+      "verified": true
+    },
+    "MAT 301": {
+      "title": "Analytic Geometry & Calculus I",
+      "credits": 4,
+      "prerequisites": [
+        "MAT 206"
+      ],
+      "description": "Limits, continuity, derivatives, differentiation rules, applications of derivatives, and an introduction to integration.",
+      "typically_offered": [
+        "Fall",
+        "Spring",
+        "Summer"
+      ],
+      "category": "major_required",
+      "common_core_area": "Mathematical and Quantitative Reasoning (STEM variant)",
+      "verified": true
+    },
+    "CSC 101": {
+      "title": "Computers and Society",
+      "credits": 3,
+      "prerequisites": [],
+      "description": "Survey of computer applications and their social impact. Hardware, software, networking, and ethical issues in computing.",
+      "typically_offered": [
+        "Fall",
+        "Spring",
+        "Summer"
+      ],
+      "category": "major_required",
+      "verified": true
+    },
+    "BIO 425": {
+      "title": "Anatomy & Physiology I",
+      "credits": 4,
+      "prerequisites": [
+        "ENG 101"
+      ],
+      "description": "Structure and function of the human body: cells, tissues, integumentary, skeletal, muscular, and nervous systems. Required for nursing.",
+      "typically_offered": [
+        "Fall",
+        "Spring",
+        "Summer"
+      ],
+      "category": "major_required",
+      "common_core_area": "Life and Physical Sciences",
+      "verified": true
+    },
+    "BIO 110": {
+      "title": "General Biology I",
+      "credits": 4,
+      "prerequisites": [],
+      "description": "Cell biology, biochemistry, genetics, and molecular biology with laboratory.",
+      "typically_offered": [
+        "Fall",
+        "Spring"
+      ],
+      "category": "common_core_required",
+      "common_core_area": "Life and Physical Sciences",
+      "verified": true
+    },
+    "BIO 210": {
+      "title": "General Biology II",
+      "credits": 4,
+      "prerequisites": [
+        "BIO 110"
+      ],
+      "description": "Evolution, ecology, biodiversity, plant and animal physiology with laboratory.",
+      "typically_offered": [
+        "Fall",
+        "Spring"
+      ],
+      "category": "major_required",
+      "verified": true
+    },
+    "CHE 121": {
+      "title": "Fundamentals of General Chemistry I",
+      "credits": 4,
+      "prerequisites": [
+        "MAT 51 or placement"
+      ],
+      "description": "Atomic structure, bonding, stoichiometry, gas laws, and solutions. Required for nursing.",
+      "typically_offered": [
+        "Fall",
+        "Spring",
+        "Summer"
+      ],
+      "category": "major_required",
+      "common_core_area": "Life and Physical Sciences",
+      "verified": true
+    },
+    "CHE 201": {
+      "title": "General Chemistry I",
+      "credits": 4,
+      "prerequisites": [
+        "MAT 56 or placement"
+      ],
+      "description": "Stoichiometry, atomic structure, periodic properties, bonding, gases, thermochemistry.",
+      "typically_offered": [
+        "Fall",
+        "Spring"
+      ],
+      "category": "common_core_required",
+      "common_core_area": "Life and Physical Sciences",
+      "verified": true
+    },
+    "CHE 202": {
+      "title": "General Chemistry II",
+      "credits": 4,
+      "prerequisites": [
+        "CHE 201"
+      ],
+      "description": "Solutions, kinetics, equilibrium, acid-base, thermodynamics, electrochemistry.",
+      "typically_offered": [
+        "Fall",
+        "Spring"
+      ],
+      "category": "major_required",
+      "verified": true
+    },
+    "PHY 110": {
+      "title": "General Physics I",
+      "credits": 4,
+      "prerequisites": [
+        "MAT 56"
+      ],
+      "description": "Algebra-based physics: mechanics, fluids, heat.",
+      "typically_offered": [
+        "Fall",
+        "Spring"
+      ],
+      "category": "common_core_required",
+      "common_core_area": "Life and Physical Sciences",
+      "verified": true
+    },
+    "PHY 215": {
+      "title": "University Physics I",
+      "credits": 4,
+      "prerequisites": [
+        "MAT 301"
+      ],
+      "description": "Calculus-based physics: kinematics, dynamics, energy, momentum, rotation, oscillations, waves.",
+      "typically_offered": [
+        "Fall",
+        "Spring"
+      ],
+      "category": "major_required",
+      "common_core_area": "Life and Physical Sciences",
+      "verified": true
+    },
+    "PHY 225": {
+      "title": "University Physics II",
+      "credits": 4,
+      "prerequisites": [
+        "PHY 215",
+        "MAT 302"
+      ],
+      "description": "Calculus-based physics: electricity, magnetism, optics, modern physics intro.",
+      "typically_offered": [
+        "Fall",
+        "Spring"
+      ],
+      "category": "major_required",
+      "verified": true
+    },
+    "PSY 100": {
+      "title": "Introduction to Psychology",
+      "credits": 3,
+      "prerequisites": [],
+      "description": "Survey of psychology: biological bases, learning, memory, cognition, development, personality, abnormal psychology, social psychology.",
+      "typically_offered": [
+        "Fall",
+        "Spring",
+        "Summer"
+      ],
+      "category": "common_core_flexible",
+      "common_core_area": "Individual and Society",
+      "verified": true
+    },
+    "SOC 100": {
+      "title": "Introduction to Sociology",
+      "credits": 3,
+      "prerequisites": [],
+      "description": "Social structure, culture, socialization, deviance, stratification, institutions.",
+      "typically_offered": [
+        "Fall",
+        "Spring",
+        "Summer"
+      ],
+      "category": "common_core_flexible",
+      "common_core_area": "Individual and Society",
+      "verified": true
+    },
+    "ANT 100": {
+      "title": "Introduction to Anthropology",
+      "credits": 3,
+      "prerequisites": [],
+      "description": "Survey of physical, cultural, and archaeological anthropology.",
+      "typically_offered": [
+        "Fall",
+        "Spring"
+      ],
+      "category": "common_core_flexible",
+      "common_core_area": "World Cultures and Global Issues",
+      "verified": true
+    },
+    "ECO 201": {
+      "title": "Macroeconomics",
+      "credits": 3,
+      "prerequisites": [
+        "ENG 101"
+      ],
+      "description": "National income, employment, money, banking, fiscal and monetary policy.",
+      "typically_offered": [
+        "Fall",
+        "Spring",
+        "Summer"
+      ],
+      "category": "common_core_flexible",
+      "common_core_area": "Individual and Society",
+      "verified": true
+    },
+    "POL 100": {
+      "title": "American Government",
+      "credits": 3,
+      "prerequisites": [],
+      "description": "Constitution, federalism, branches of government, civil rights, political parties, elections.",
+      "typically_offered": [
+        "Fall",
+        "Spring"
+      ],
+      "category": "common_core_flexible",
+      "common_core_area": "U.S. Experience in its Diversity",
+      "verified": true
+    },
+    "HIS 101": {
+      "title": "United States History I",
+      "credits": 3,
+      "prerequisites": [],
+      "description": "U.S. history from colonial era to Reconstruction.",
+      "typically_offered": [
+        "Fall",
+        "Spring",
+        "Summer"
+      ],
+      "category": "common_core_flexible",
+      "common_core_area": "U.S. Experience in its Diversity",
+      "verified": true
+    },
+    "HIS 102": {
+      "title": "United States History II",
+      "credits": 3,
+      "prerequisites": [],
+      "description": "U.S. history from Reconstruction to the present.",
+      "typically_offered": [
+        "Fall",
+        "Spring",
+        "Summer"
+      ],
+      "category": "common_core_flexible",
+      "common_core_area": "U.S. Experience in its Diversity",
+      "verified": true
+    },
+    "HIS 121": {
+      "title": "World History I",
+      "credits": 3,
+      "prerequisites": [],
+      "description": "World civilizations from antiquity to 1500.",
+      "typically_offered": [
+        "Fall",
+        "Spring"
+      ],
+      "category": "common_core_flexible",
+      "common_core_area": "World Cultures and Global Issues",
+      "verified": true
+    },
+    "HIS 122": {
+      "title": "World History II",
+      "credits": 3,
+      "prerequisites": [],
+      "description": "World civilizations from 1500 to the present.",
+      "typically_offered": [
+        "Fall",
+        "Spring"
+      ],
+      "category": "common_core_flexible",
+      "common_core_area": "World Cultures and Global Issues",
+      "verified": true
+    },
+    "SPE 100": {
+      "title": "Fundamentals of Public Speaking",
+      "credits": 3,
+      "prerequisites": [],
+      "description": "Theory and practice of public speaking, including organization, delivery, and audience analysis.",
+      "typically_offered": [
+        "Fall",
+        "Spring",
+        "Summer"
+      ],
+      "category": "common_core_flexible",
+      "common_core_area": "Creative Expression",
+      "verified": true
+    },
+    "ACC 122": {
+      "title": "Accounting Principles I (Financial Accounting)",
+      "credits": 4,
+      "prerequisites": [
+        "ENG 101"
+      ],
+      "description": "Accounting cycle, financial statements, GAAP for sole proprietorships and corporations.",
+      "typically_offered": [
+        "Fall",
+        "Spring",
+        "Summer"
+      ],
+      "category": "major_required",
+      "verified": true
+    },
+    "ACC 222": {
+      "title": "Accounting Principles II (Managerial Accounting)",
+      "credits": 4,
+      "prerequisites": [
+        "ACC 122"
+      ],
+      "description": "Cost accounting, budgeting, variance analysis, decision-making for managers.",
+      "typically_offered": [
+        "Fall",
+        "Spring"
+      ],
+      "category": "major_required",
+      "verified": true
+    },
+    "ACC 295": {
+      "title": "Forensic Accounting",
+      "credits": 3,
+      "prerequisites": [
+        "ACC 222"
+      ],
+      "description": "Fraud detection and investigation, litigation support, forensic auditing techniques.",
+      "typically_offered": [
+        "Fall",
+        "Spring"
+      ],
+      "category": "major_required",
+      "verified": false
+    },
+    "CRJ 101": {
+      "title": "Introduction to Criminal Justice",
+      "credits": 3,
+      "prerequisites": [],
+      "description": "Overview of the criminal justice system: police, courts, corrections.",
+      "typically_offered": [
+        "Fall",
+        "Spring",
+        "Summer"
+      ],
+      "category": "major_required",
+      "verified": true
+    },
+    "CRJ 202": {
+      "title": "Criminal Law",
+      "credits": 3,
+      "prerequisites": [
+        "CRJ 101"
+      ],
+      "description": "Substantive criminal law: elements of crimes, defenses, sentencing.",
+      "typically_offered": [
+        "Fall",
+        "Spring"
+      ],
+      "category": "major_required",
+      "verified": true
+    },
+    "ART 100": {
+      "title": "Introduction to Art History",
+      "credits": 3,
+      "prerequisites": [],
+      "description": "Survey of major movements in Western and non-Western art.",
+      "typically_offered": [
+        "Fall",
+        "Spring"
+      ],
+      "category": "common_core_flexible",
+      "common_core_area": "Creative Expression",
+      "verified": true
+    },
+    "MUS 100": {
+      "title": "Introduction to Music",
+      "credits": 3,
+      "prerequisites": [],
+      "description": "Survey of music styles and history.",
+      "typically_offered": [
+        "Fall",
+        "Spring"
+      ],
+      "category": "common_core_flexible",
+      "common_core_area": "Creative Expression",
+      "verified": true
+    },
+    "THE 100": {
+      "title": "Introduction to Theatre",
+      "credits": 3,
+      "prerequisites": [],
+      "description": "Theatre history, dramatic literature, and production elements.",
+      "typically_offered": [
+        "Fall",
+        "Spring"
+      ],
+      "category": "common_core_flexible",
+      "common_core_area": "Creative Expression",
+      "verified": true
+    },
+    "PHI 100": {
+      "title": "Introduction to Philosophy",
+      "credits": 3,
+      "prerequisites": [],
+      "description": "Major philosophical questions: knowledge, reality, ethics, freedom.",
+      "typically_offered": [
+        "Fall",
+        "Spring"
+      ],
+      "category": "common_core_flexible",
+      "common_core_area": "Individual and Society",
+      "verified": true
+    },
+    "SPN 100": {
+      "title": "Elementary Spanish I",
+      "credits": 3,
+      "prerequisites": [],
+      "description": "Basic vocabulary, grammar, conversation, and reading.",
+      "typically_offered": [
+        "Fall",
+        "Spring",
+        "Summer"
+      ],
+      "category": "common_core_flexible",
+      "common_core_area": "World Cultures and Global Issues",
+      "verified": true
+    },
+    "FRN 100": {
+      "title": "Elementary French I",
+      "credits": 3,
+      "prerequisites": [],
+      "description": "Basic French vocabulary, grammar, conversation.",
+      "typically_offered": [
+        "Fall",
+        "Spring"
+      ],
+      "category": "common_core_flexible",
+      "common_core_area": "World Cultures and Global Issues",
+      "verified": true
+    },
+    "ETH 100": {
+      "title": "Introduction to Ethnic Studies",
+      "credits": 3,
+      "prerequisites": [],
+      "description": "Race, ethnicity, identity, and inequality in the U.S.",
+      "typically_offered": [
+        "Fall",
+        "Spring"
+      ],
+      "category": "common_core_flexible",
+      "common_core_area": "U.S. Experience in its Diversity",
+      "verified": false
+    },
+    "WGS 100": {
+      "title": "Introduction to Women's and Gender Studies",
+      "credits": 3,
+      "prerequisites": [],
+      "description": "Gender as social construction; intersectionality; feminist movements.",
+      "typically_offered": [
+        "Fall",
+        "Spring"
+      ],
+      "category": "common_core_flexible",
+      "common_core_area": "Individual and Society",
+      "verified": false
+    }
+  }
+}
