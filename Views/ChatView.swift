@@ -11,10 +11,12 @@ struct SemesterPlan: Codable {
     let semesters: [PlanSemester]
     let totalCredits: Int
     let totalSemesters: Int
+    let degreeRequires: Int?
     enum CodingKeys: String, CodingKey {
         case semesters
         case totalCredits   = "total_credits"
         case totalSemesters = "total_semesters"
+        case degreeRequires = "degree_requires"
     }
 }
 struct PlanSemester: Codable, Identifiable {
@@ -36,6 +38,22 @@ struct PlanCourse: Codable, Identifiable {
     let category: String
     let description: String?
     let prerequisites: [String]?
+
+    // Default mandatory=true if server omits it (backward compat)
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        code          = try c.decode(String.self, forKey: .code)
+        title         = try c.decode(String.self, forKey: .title)
+        credits       = try c.decode(Int.self, forKey: .credits)
+        mandatory     = try c.decodeIfPresent(Bool.self, forKey: .mandatory) ?? true
+        category      = try c.decodeIfPresent(String.self, forKey: .category) ?? ""
+        description   = try c.decodeIfPresent(String.self, forKey: .description)
+        prerequisites = try c.decodeIfPresent([String].self, forKey: .prerequisites)
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case code, title, credits, mandatory, category, description, prerequisites
+    }
 }
 
 // MARK: - Chat Message
@@ -97,7 +115,7 @@ struct ChatView: View {
                 header
                 messageList
                 inputBar
-            } 
+            }
             .background(bg.ignoresSafeArea())
             .onTapGesture { inputFocused = false }
             .onReceive(KeyboardPublisher.shared.$keyboardHeight) { height in
@@ -273,7 +291,6 @@ struct ChatView: View {
 
         // Per-token: show partial message field while streaming
         llm.onToken = { token in
-            // Append raw token; BubbleView reads the partial message field
             messages[botIdx].streamText += token
         }
 
@@ -517,7 +534,7 @@ struct CourseRow: View {
                                       ? Color.blue.opacity(0.1)
                                       : Color.orange.opacity(0.1))
                             if !course.category.isEmpty {
-                                Badge(text: course.category,
+                                Badge(text: prettyCat(course.category),
                                       fg: .secondary,
                                       bg: Color.gray.opacity(0.1))
                             }
@@ -549,6 +566,11 @@ struct CourseRow: View {
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
+    }
+
+    /// Turn "major_required" into "Major Required" for display
+    private func prettyCat(_ raw: String) -> String {
+        raw.replacingOccurrences(of: "_", with: " ").capitalized
     }
 }
 

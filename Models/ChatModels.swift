@@ -4,7 +4,6 @@
 //
 //  Created by Youness El Akri on 5/7/26.
 //
-
 import Foundation
 
 struct UserProfile: Codable {
@@ -18,11 +17,12 @@ struct UserProfile: Codable {
     var gradSemester: String
     var graduationYear: String
     var completedCourses: [String] = []
-    
+    var takesSummerClasses: Bool = false   // NEW
+
     var fullName: String {
         "\(firstName) \(lastName)".trimmingCharacters(in: .whitespaces)
     }
-    
+
     static let defaultProfile = UserProfile(
         userId: UUID().uuidString,
         firstName: "",
@@ -33,7 +33,8 @@ struct UserProfile: Codable {
         startYear: "",
         gradSemester: "Spring",
         graduationYear: "",
-        completedCourses: []
+        completedCourses: [],
+        takesSummerClasses: false
     )
 }
 
@@ -42,7 +43,7 @@ struct StoredMessage: Codable, Identifiable {
     let text: String
     let isUser: Bool
     let timestamp: Date
-    
+
     init(id: String = UUID().uuidString, text: String, isUser: Bool, timestamp: Date = Date()) {
         self.id = id
         self.text = text
@@ -57,7 +58,7 @@ struct Conversation: Codable, Identifiable {
     var createdAt: Date
     var lastUpdated: Date
     var messages: [StoredMessage]
-    
+
     init(id: String = UUID().uuidString, title: String, createdAt: Date = Date(), lastUpdated: Date = Date(), messages: [StoredMessage] = []) {
         self.id = id
         self.title = title
@@ -73,7 +74,7 @@ struct ConversationSummary: Codable, Identifiable {
     let lastUpdated: Date
     let previewText: String
     let messageCount: Int
-    
+
     init(conversation: Conversation) {
         self.id = conversation.id
         self.title = conversation.title

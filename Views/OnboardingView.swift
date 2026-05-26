@@ -15,6 +15,8 @@ struct OnboardingView: View {
     @AppStorage("gradSemester") var gradSemester = "Spring"
     @AppStorage("graduationYear") var graduationYear = ""
     @AppStorage("completedCourses") var completedCoursesData: String = "[]"
+    // NEW: summer classes preference
+    @AppStorage("takesSummerClasses") var takesSummerClasses: Bool = false
 
     @State private var startYearInput = ""
     @State private var graduationYearInput = ""
@@ -34,13 +36,13 @@ struct OnboardingView: View {
     }
 
     let majors = [
-        "Computer Science",
-        "Business Administration",
-        "Mathematics",
-        "Biology",
-        "Psychology",
-        "Nursing",
-        "Engineering Science",
+        "Computer Science (A.S.)",
+        "Business Administration (A.S.)",
+        "Mathematics (A.S.)",
+        "Biology (A.S.)",
+        "Psychology (A.A.)",
+        "Nursing (A.A.S.)",
+        "Engineering Science (A.S.)" ,
         "Accounting (A.A.S.)",
         "Accounting (Certificate)",
         "Accounting for Forensic Accounting (A.S.)",
@@ -104,16 +106,12 @@ struct OnboardingView: View {
         "Writing and Literature (A.A.)"
     ]
     
-    let commonCourses = [
-        "ENG 101", "ENG 201", "MAT 100", "MAT 104", "MAT 150", "MAT 161.5", "MAT 206", "MAT 301",
-        "CSC 101", "CSC 111", "CSC 211", "CSC 231", "CSC 232", "CIS 100", "CIS 165",
-        "BIO 110", "BIO 210", "BIO 425", "BIO 426", "CHE 121", "CHE 201", "CHE 202",
-        "PHY 110", "PHY 215", "PHY 225", "PSY 100", "PSY 200", "SOC 100", "HIS 101",
-        "HIS 102", "POL 100", "ART 100", "MUS 100", "SPE 100", "ECO 201", "ECO 202"
+    let commonCourses = ["ACC 122", "ACC 222", "ACC 241", "ACC 250", "ACC 295", "ANI 100", "ANI 200", "ANT 100", "ART 100", "ART 105", "ART 200", "BIO 110", "BIO 210", "BIO 425", "BIO 426", "BUS 104", "BUS 110", "BUS 210", "BUS 311", "CHE 121", "CHE 201", "CHE 202", "CIS 100", "CIS 165", "CIS 272", "CIS 285", "CIS 316", "CIS 317", "CIS 345", "CIS 359", "CIS 362", "CIS 364", "CIS 385", "CIS 395", "COE 100", "COM 100", "COM 110", "CRJ 101", "CRJ 201", "CRJ 202", "CRJ 203", "CRJ 204", "CSC 101", "CSC 103", "CSC 111", "CSC 203", "CSC 211", "CSC 231", "CSC 232", "ECE 110", "ECE 210", "ECO 201", "ECO 202", "EDU 201", "EDU 202", "EDU 210", "ENG 101", "ENG 105", "ENG 201", "ENG 211", "ENG 212", "ETH 100", "FNB 100", "FNB 200", "FRN 100", "GER 100", "GIS 201", "HIS 101", "HIS 102", "HIS 121", "HIS 122", "HIT 100", "HIT 110", "HIT 220", "HIT 230", "HSC 110", "HSC 220", "HUS 101", "HUS 201", "HUS 210", "LIN 100", "MAR 100", "MAT 100", "MAT 104", "MAT 150", "MAT 161.5", "MAT 206", "MAT 301", "MAT 302", "MAT 303", "MAT 314", "MAT 315", "MMP 100", "MMP 200", "MMP 250", "MUS 100", "MUS 110", "NUR 112", "NUR 211", "NUR 313", "NUR 411", "NUR 415", "PHE 100", "PHI 100", "PHI 110", "PHI 200", "PHY 110", "PHY 215", "PHY 225", "PMC 100", "POL 100", "PSY 100", "PSY 200", "PSY 240", "PSY 260", "RES 200", "RES 210", "SOC 100", "SPE 100", "SPE 102", "SPN 100", "SPN 200", "THE 100", "THE 110", "URB 100", "VAT 100", "VAT 200", "WGS 100"
     ]
 
     let scheduleOptions = ["Full-time", "Part-time"]
-    let semesters = ["Fall", "Spring", "Summer"]
+    // CHANGED: removed "Summer" — only Fall and Spring
+    let semesters = ["Fall", "Spring"]
     
     var filteredCourses: [String] {
         if courseInput.isEmpty { return [] }
@@ -234,13 +232,18 @@ struct OnboardingView: View {
                     }
                     .pickerStyle(.segmented)
 
-                    // Start Semester
-                    Picker("Start Semester", selection: $startSemester) {
-                        ForEach(semesters, id: \.self) { sem in
-                            Text(sem)
+                    // MARK: - Start Semester (Fall / Spring only)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Start Semester")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        Picker("Start Semester", selection: $startSemester) {
+                            ForEach(semesters, id: \.self) { sem in
+                                Text(sem)
+                            }
                         }
+                        .pickerStyle(.segmented)
                     }
-                    .pickerStyle(.segmented)
 
                     // Start Year
                     TextField("Start Year (e.g. 2024)", text: $startYearInput)
@@ -254,13 +257,18 @@ struct OnboardingView: View {
                             focusedField = .graduationYear
                         }
 
-                    // Graduation Semester
-                    Picker("Graduation Semester", selection: $gradSemester) {
-                        ForEach(semesters, id: \.self) { sem in
-                            Text(sem)
+                    // MARK: - Graduation Semester (Fall / Spring only)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Graduation Semester")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        Picker("Graduation Semester", selection: $gradSemester) {
+                            ForEach(semesters, id: \.self) { sem in
+                                Text(sem)
+                            }
                         }
+                        .pickerStyle(.segmented)
                     }
-                    .pickerStyle(.segmented)
 
                     // Graduation Year
                     TextField("Graduation Year (e.g. 2027)", text: $graduationYearInput)
@@ -273,6 +281,43 @@ struct OnboardingView: View {
                         .onSubmit {
                             focusedField = .courseInput
                         }
+
+                    // MARK: - Summer Classes Toggle
+                    HStack(spacing: 14) {
+                        ZStack {
+                            Circle()
+                                .fill(takesSummerClasses ? Color.orange.opacity(0.15) : Color(.systemGray5))
+                                .frame(width: 42, height: 42)
+                            Text("☀️")
+                                .font(.title3)
+                        }
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Summer Classes")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                            Text("Are you planning to take any summer classes?")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
+                        Spacer()
+
+                        Toggle("", isOn: $takesSummerClasses)
+                            .labelsHidden()
+                            .tint(.orange)
+                    }
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(takesSummerClasses ? Color.orange.opacity(0.06) : Color(.systemGray6))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(takesSummerClasses ? Color.orange.opacity(0.35) : Color.clear, lineWidth: 1)
+                    )
+                    .animation(.easeInOut(duration: 0.2), value: takesSummerClasses)
 
                     // MARK: - Completed Courses Section
                     VStack(alignment: .leading, spacing: 12) {
@@ -385,13 +430,15 @@ struct OnboardingView: View {
                             startYear: startYear,
                             gradSemester: gradSemester,
                             graduationYear: graduationYear,
-                            completedCourses: completedCourses
+                            completedCourses: completedCourses,
+                            takesSummerClasses: takesSummerClasses  // NEW
                         )
                         UserProfileManager.shared.updateProfile(profile)
                         
                         print("✅ Onboarding complete for user: \(userId)")
                         print("📅 Start: \(startSemester) \(startYear)")
                         print("📅 Graduation: \(gradSemester) \(graduationYear)")
+                        print("☀️ Takes Summer Classes: \(takesSummerClasses)")
                         print("📚 Completed Courses: \(completedCourses)")
                         
                         hasOnboarded = true
