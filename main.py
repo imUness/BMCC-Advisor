@@ -12,7 +12,7 @@ All bugs from v10.8 resolved:
   8. Total credits hit exactly 60/60 for CS A.S.
 """
 
-from fastapi import FastAPI, Request, BackgroundTasks
+from fastapi import FastAPI, Request, BackgroundTasks 
 from fastapi.responses import StreamingResponse, JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import ollama
@@ -36,7 +36,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 log = logging.getLogger(__name__)
 
 
-class Config:
+class Config: 
     PORT = 8000
     CATALOG_DIR = "./catalog_by_major"
     OLLAMA_HOST = "http://localhost:11434"
