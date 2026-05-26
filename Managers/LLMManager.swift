@@ -13,7 +13,7 @@ class LLMManager: NSObject, ObservableObject, URLSessionDataDelegate {
 
     @Published var isThinking = false
 
-    private let baseURL = "https://mipilar.com"
+    private let baseURL = "" // Your AI API 
 
     // Keep session alive as instance property — NOT local var
     // (local var gets deallocated and delegate never fires)
